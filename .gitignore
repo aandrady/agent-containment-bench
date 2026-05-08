@@ -1,0 +1,20 @@
+cat > .gitignore <<'EOF'
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.local
+.ipynb_checkpoints/
+results/runs.jsonl
+results/*.parquet
+results/*.html
+results/raw/
+.DS_Store
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.log
+sandbox/.build-cache/
+EOF
