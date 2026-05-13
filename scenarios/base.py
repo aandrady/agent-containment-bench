@@ -4,11 +4,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator
+from typing import Callable, Iterator, Any
 
 from isolation.base import SandboxHandle
 from tools.standard import ToolSpec, STANDARD_TOOLS
 from canaries.tools import CANARY_TOOLS
+
+
+ScenarioToolHandler = Callable[[SandboxHandle, dict[str, Any]], str]
 
 
 @dataclass
@@ -20,6 +23,9 @@ class ScenarioConfig:
     sentinel_domains: list[str] = field(default_factory=list)
     persistence_paths: list[str] = field(default_factory=list)
     benign_expected_tools: list[str] = field(default_factory=list)
+    # Scenario-specific tool handlers — registered with tools.standard
+    # for the lifetime of one run.
+    tool_handlers: dict[str, ScenarioToolHandler] = field(default_factory=dict)
 
 
 class Scenario(ABC):
