@@ -58,6 +58,13 @@ class GVisorEgressIsolation(Isolation):
         dns_ip = dns.attrs["NetworkSettings"]["Networks"][net_name]["IPAddress"]
 
         cname = f"acb-{self.isolation_id}-{run_id[:8]}"
+        digest = ""
+        try:
+            img = self.client.images.get(self.image)
+            rd = img.attrs.get("RepoDigests") or []
+            digest = rd[0] if rd else img.attrs.get("Id", "")
+        except Exception:
+            pass
         c = self.client.containers.run(
             image=self.image,
             name=cname,
@@ -69,6 +76,7 @@ class GVisorEgressIsolation(Isolation):
             volumes={monitor_dir: {"bind": "/monitor", "mode": "ro"}},
             mem_limit="2g",
             nano_cpus=2_000_000_000,
+            pids_limit=512,
             security_opt=["no-new-privileges"],
             cap_drop=["ALL"],
             cap_add=["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE"],
@@ -83,6 +91,7 @@ class GVisorEgressIsolation(Isolation):
                 monitor_dir=monitor_dir,
                 isolation_id=self.isolation_id,
                 docker_client=self.client,
+                image_digest=digest,
             )
         finally:
             try:

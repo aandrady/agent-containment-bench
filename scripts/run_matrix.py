@@ -10,7 +10,10 @@ from dotenv import load_dotenv
 
 import harness.runner as runner
 from harness.types import RunSpec
-from isolation.docker import DockerIsolation, GVisorIsolation
+from isolation.docker import (
+    DockerIsolation, DockerLooseIsolation, DockerHardenedIsolation,
+    GVisorIsolation, GVisorHardenedIsolation,
+)
 from isolation.gvisor_egress import GVisorEgressIsolation
 from frameworks.anthropic_native import AnthropicNativeFramework
 from frameworks.langchain_react import LangChainReActFramework
@@ -24,7 +27,15 @@ from scenarios.s06_persistence import S06Persistence
 
 load_dotenv()
 
-ISOLATIONS = ["docker", "gvisor", "gvisor_egress"]
+# Default matrix axis: hardening as a study variable.
+# Set MATRIX_ISOLATIONS env var to override (comma-separated list of isolation_ids).
+_ALL_ISOLATIONS = [
+    "docker_loose", "docker", "docker_hardened",
+    "gvisor", "gvisor_hardened", "gvisor_egress",
+]
+ISOLATIONS = (
+    os.environ.get("MATRIX_ISOLATIONS", "docker,gvisor,gvisor_egress").split(",")
+)
 FRAMEWORKS = ["anthropic_native", "langchain_react"]
 SCENARIOS = [
     "s00_benign", "s01_injection_web", "s02_poisoned_tool",
@@ -39,8 +50,11 @@ RESULTS_PATH = Path(os.environ.get("RESULTS_DIR", "./results")) / "matrix_runs.j
 
 def init_registries():
     runner.ISOLATION_REGISTRY = {
+        "docker_loose": DockerLooseIsolation(),
         "docker": DockerIsolation(),
+        "docker_hardened": DockerHardenedIsolation(),
         "gvisor": GVisorIsolation(),
+        "gvisor_hardened": GVisorHardenedIsolation(),
         "gvisor_egress": GVisorEgressIsolation(),
     }
     runner.FRAMEWORK_REGISTRY = {

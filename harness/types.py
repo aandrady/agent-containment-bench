@@ -25,6 +25,8 @@ class ToolCall:
     result: str
     timestamp: float
     duration_s: float
+    success: bool = True
+    step_index: int = -1
 
 
 @dataclass
@@ -55,6 +57,8 @@ class RunResult:
     started_at: str
     ended_at: str
     error: Optional[str] = None
+    image_digest: str = ""
+    first_trigger_step: dict[str, int] = field(default_factory=dict)
 
     def to_jsonl(self) -> str:
         return json.dumps({
@@ -72,8 +76,10 @@ class RunResult:
             "started_at": self.started_at,
             "ended_at": self.ended_at,
             "error": self.error,
+            "image_digest": self.image_digest,
+            "first_trigger_step": self.first_trigger_step,
             "transcript_summary": [
-                {"tool": tc.tool_name, "ok": "error" not in tc.result.lower()}
+                {"tool": tc.tool_name, "ok": tc.success, "step": tc.step_index}
                 for tc in self.transcript
             ],
         })
