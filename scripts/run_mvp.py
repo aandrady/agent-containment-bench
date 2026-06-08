@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import harness.runner as runner
-from harness.types import RunSpec
+from harness.types import RunSpec, run_resume_key
 from isolation.docker import DockerIsolation, GVisorIsolation
 from frameworks.anthropic_native import AnthropicNativeFramework
 from scenarios.s00_benign import S00Benign
@@ -42,7 +42,8 @@ def main():
     if RESULTS_PATH.exists():
         for line in RESULTS_PATH.read_text().splitlines():
             try:
-                done.add(json.loads(line)["run_id"])
+                record = json.loads(line)
+                done.add(record.get("resume_key") or run_resume_key(record))
             except Exception:
                 pass
 
@@ -58,7 +59,7 @@ def main():
                         seed=seed,
                         max_steps=20,
                     )
-                    if spec.run_id in done:
+                    if spec.resume_key() in done:
                         continue
                     print(f"→ {framework_id} / {isolation_id} / {scenario_id} / seed={seed}")
                     result = runner.run_one(spec, campaign_id="mvp")

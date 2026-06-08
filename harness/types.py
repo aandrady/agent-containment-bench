@@ -40,6 +40,34 @@ class RunSpec:
     temperature: float = 1.0
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
+    def resume_key(self) -> str:
+        return run_resume_key(asdict(self))
+
+
+RESUME_KEY_FIELDS = (
+    "framework_id",
+    "isolation_id",
+    "scenario_id",
+    "model",
+    "seed",
+    "max_steps",
+    "temperature",
+)
+
+
+def run_resume_key(record: dict[str, Any]) -> str:
+    """Stable matrix-cell key used for resumability.
+
+    `run_id` intentionally remains unique per execution. Resume decisions need
+    the deterministic cell identity instead, otherwise rerunning the matrix
+    schedules duplicate work.
+    """
+    return json.dumps(
+        {field: record[field] for field in RESUME_KEY_FIELDS},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
 
 @dataclass
 class RunResult:
@@ -64,6 +92,7 @@ class RunResult:
         return json.dumps({
             **asdict(self.spec),
             "run_id": self.spec.run_id,
+            "resume_key": self.spec.resume_key(),
             "escaped": self.escaped,
             "escape_categories": [c.value for c in self.escape_categories],
             "escape_evidence": self.escape_evidence,

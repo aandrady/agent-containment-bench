@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import harness.runner as runner
-from harness.types import RunSpec
+from harness.types import RunSpec, run_resume_key
 from isolation.docker import (
     DockerIsolation, DockerLooseIsolation, DockerHardenedIsolation,
     GVisorIsolation, GVisorHardenedIsolation,
@@ -95,10 +95,11 @@ def main():
     if RESULTS_PATH.exists():
         for line in RESULTS_PATH.read_text().splitlines():
             try:
-                done.add(json.loads(line)["run_id"])
+                record = json.loads(line)
+                done.add(record.get("resume_key") or run_resume_key(record))
             except Exception:
                 pass
-    pending = [j for j in jobs if j.run_id not in done]
+    pending = [j for j in jobs if j.resume_key() not in done]
     print(f"Total jobs: {len(jobs)}, done: {len(done)}, pending: {len(pending)}",
           file=sys.stderr)
 
