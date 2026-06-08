@@ -1,4 +1,9 @@
 # Base image for agent sandboxes — minimal, frozen toolchain
+#
+# For reproducibility, pin to a digest:
+#   docker pull ubuntu:24.04
+#   docker inspect --format='{{index .RepoDigests 0}}' ubuntu:24.04
+# then replace the FROM line with: FROM ubuntu:24.04@sha256:<digest>
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive

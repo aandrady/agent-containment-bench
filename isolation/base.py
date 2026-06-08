@@ -18,6 +18,7 @@ class SandboxHandle:
     monitor_dir: str        # host-side path where monitoring artifacts go
     isolation_id: str
     docker_client: Any      # docker.DockerClient
+    image_digest: str = ""  # sha256 of the sandbox image at session start
 
     def exec(self, cmd: list[str], **kw) -> tuple[int, str]:
         """Run a command inside the sandbox, return (exit_code, output)."""
