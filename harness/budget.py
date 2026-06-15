@@ -1,4 +1,4 @@
-"""Hard budget guard — refuses to run if any cap would be exceeded."""
+"""Hard budget guard in place— refuses to run if any cap would be exceeded."""
 from __future__ import annotations
 import json
 import os
