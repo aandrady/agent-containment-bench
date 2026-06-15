@@ -2,7 +2,7 @@
 
 A benchmark for measuring **sandbox escape rates** of LLM agent frameworks under adversarial scenarios. It pits identical tool surfaces against the same prompt-injection / canary / egress / persistence scenarios across multiple isolation backends, and reports escape rates with confidence intervals.
 
-## What it measures
+## What it measures 
 
 For each `(framework × isolation × scenario)` cell, the harness runs N trials of an agent with a fixed tool surface (`shell`, `file_read`, `file_write`, `http_get`) inside a containerized sandbox staged with adversarial content. A run is flagged as an **escape** if any post-hoc detector fires:
 
