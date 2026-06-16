@@ -1,23 +1,27 @@
 """Abstract isolation environment — provides a sandbox for one agent run."""
+
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Iterator, Any
+
 import io
 import tarfile
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class SandboxHandle:
     """Handle exposing the running sandbox to the framework and scenario."""
+
     container_id: str
     container_name: str
-    workdir: str            # path inside the sandbox where the agent works
-    network_name: str       # docker network the sandbox is on
-    monitor_dir: str        # host-side path where monitoring artifacts go
+    workdir: str  # path inside the sandbox where the agent works
+    network_name: str  # docker network the sandbox is on
+    monitor_dir: str  # host-side path where monitoring artifacts go
     isolation_id: str
-    docker_client: Any      # docker.DockerClient
+    docker_client: Any  # docker.DockerClient
     image_digest: str = ""  # sha256 of the sandbox image at session start
 
     def exec(self, cmd: list[str], **kw) -> tuple[int, str]:
@@ -41,6 +45,7 @@ class SandboxHandle:
 
 class Isolation(ABC):
     """Abstract isolation backend. Implementations differ in runtime + network."""
+
     isolation_id: str = "abstract"
 
     @abstractmethod

@@ -1,5 +1,7 @@
 """Run the full matrix: 2 frameworks × 3 isolations × 7 scenarios × N runs."""
+
 from __future__ import annotations
+
 import json
 import os
 import sys
@@ -9,14 +11,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import harness.runner as runner
-from harness.types import RunSpec, run_resume_key
-from isolation.docker import (
-    DockerIsolation, DockerLooseIsolation, DockerHardenedIsolation,
-    GVisorIsolation, GVisorHardenedIsolation,
-)
-from isolation.gvisor_egress import GVisorEgressIsolation
 from frameworks.anthropic_native import AnthropicNativeFramework
 from frameworks.langchain_react import LangChainReActFramework
+from harness.types import RunSpec, run_resume_key
+from isolation.docker import (
+    DockerHardenedIsolation,
+    DockerIsolation,
+    DockerLooseIsolation,
+    GVisorHardenedIsolation,
+    GVisorIsolation,
+)
+from isolation.gvisor_egress import GVisorEgressIsolation
 from scenarios.s00_benign import S00Benign
 from scenarios.s01_injection_web import S01InjectionWeb
 from scenarios.s02_poisoned_tool import S02PoisonedTool
@@ -30,16 +35,23 @@ load_dotenv()
 # Default matrix axis: hardening as a study variable.
 # Set MATRIX_ISOLATIONS env var to override (comma-separated list of isolation_ids).
 _ALL_ISOLATIONS = [
-    "docker_loose", "docker", "docker_hardened",
-    "gvisor", "gvisor_hardened", "gvisor_egress",
+    "docker_loose",
+    "docker",
+    "docker_hardened",
+    "gvisor",
+    "gvisor_hardened",
+    "gvisor_egress",
 ]
-ISOLATIONS = (
-    os.environ.get("MATRIX_ISOLATIONS", "docker,gvisor,gvisor_egress").split(",")
-)
+ISOLATIONS = os.environ.get("MATRIX_ISOLATIONS", "docker,gvisor,gvisor_egress").split(",")
 FRAMEWORKS = ["anthropic_native", "langchain_react"]
 SCENARIOS = [
-    "s00_benign", "s01_injection_web", "s02_poisoned_tool",
-    "s03_fs_traversal", "s04_cred_canary", "s05_egress", "s06_persistence",
+    "s00_benign",
+    "s01_injection_web",
+    "s02_poisoned_tool",
+    "s03_fs_traversal",
+    "s04_cred_canary",
+    "s05_egress",
+    "s06_persistence",
 ]
 
 MODEL = os.environ.get("PRIMARY_MODEL", "claude-opus-4-7")
@@ -86,10 +98,16 @@ def main():
         for iso in ISOLATIONS:
             for sc in SCENARIOS:
                 for seed in range(N_RUNS):
-                    jobs.append(RunSpec(
-                        framework_id=fw, isolation_id=iso, scenario_id=sc,
-                        model=MODEL, seed=seed, max_steps=20,
-                    ))
+                    jobs.append(
+                        RunSpec(
+                            framework_id=fw,
+                            isolation_id=iso,
+                            scenario_id=sc,
+                            model=MODEL,
+                            seed=seed,
+                            max_steps=20,
+                        )
+                    )
 
     done = set()
     if RESULTS_PATH.exists():
@@ -97,11 +115,10 @@ def main():
             try:
                 record = json.loads(line)
                 done.add(record.get("resume_key") or run_resume_key(record))
-            except Exception:
-                pass
+            except (json.JSONDecodeError, KeyError):
+                continue
     pending = [j for j in jobs if j.resume_key() not in done]
-    print(f"Total jobs: {len(jobs)}, done: {len(done)}, pending: {len(pending)}",
-          file=sys.stderr)
+    print(f"Total jobs: {len(jobs)}, done: {len(done)}, pending: {len(pending)}", file=sys.stderr)
 
     with ProcessPoolExecutor(max_workers=PARALLELISM) as ex:
         futures = {ex.submit(_run, spec): spec for spec in pending}
@@ -111,8 +128,10 @@ def main():
                 result = fut.result()
                 with RESULTS_PATH.open("a") as f:
                     f.write(result.to_jsonl() + "\n")
-                print(f"✓ {spec.framework_id}/{spec.isolation_id}/{spec.scenario_id}/"
-                      f"{spec.seed}: esc={result.escaped} ${result.cost_usd:.3f}")
+                print(
+                    f"✓ {spec.framework_id}/{spec.isolation_id}/{spec.scenario_id}/"
+                    f"{spec.seed}: esc={result.escaped} ${result.cost_usd:.3f}"
+                )
             except Exception as e:
                 print(f"✗ {spec.run_id[:8]}: {e}", file=sys.stderr)
 

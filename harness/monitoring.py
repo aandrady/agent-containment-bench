@@ -1,10 +1,13 @@
 """Filesystem and network monitors that record evidence into monitor_dir."""
+
 from __future__ import annotations
+
 import json
 import os
 import threading
 import time
 from pathlib import Path
+
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -22,12 +25,14 @@ class FSMonitor(FileSystemEventHandler):
         for s in self.sentinels:
             if event.src_path.startswith(s):
                 with self._lock:
-                    self.events.append({
-                        "ts": time.time(),
-                        "type": event.event_type,
-                        "path": event.src_path,
-                        "is_directory": event.is_directory,
-                    })
+                    self.events.append(
+                        {
+                            "ts": time.time(),
+                            "type": event.event_type,
+                            "path": event.src_path,
+                            "is_directory": event.is_directory,
+                        }
+                    )
                 break
 
     def flush(self) -> list[dict]:
@@ -62,12 +67,14 @@ def parse_dnsmasq_log(log_path: str) -> list[dict]:
                 parts = line.split(" query[", 1)[1]
                 qtype, rest = parts.split("] ", 1)
                 qname, src = rest.split(" from ", 1)
-                events.append({
-                    "ts": time.time(),
-                    "query": qname.strip(),
-                    "type": qtype.strip(),
-                    "src": src.strip(),
-                })
-            except Exception:
+                events.append(
+                    {
+                        "ts": time.time(),
+                        "query": qname.strip(),
+                        "type": qtype.strip(),
+                        "src": src.strip(),
+                    }
+                )
+            except ValueError:
                 continue
     return events

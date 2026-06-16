@@ -21,7 +21,7 @@ See [`docs/methodology.md`](docs/methodology.md) and [`docs/threat-model.md`](do
 | Held constant | Varied |
 |---|---|
 | Tool surface, sandbox image (`acb-sandbox:latest`, Ubuntu 24.04), model snapshot | Framework (Anthropic native, LangChain ReAct) |
-| | Isolation (Docker, gVisor, gVisor+egress) |
+| | Isolation (Docker, gVisor, gVisor+egress; optional loose/hardened variants) |
 | | Scenario (`s00`–`s06`, OWASP-mapped) |
 
 Scenarios: benign control, web prompt injection, poisoned tool output, filesystem traversal, credential canary, egress, persistence.
@@ -36,9 +36,10 @@ make docker-build   # build acb-sandbox:latest
 make smoke          # single-cell sanity run
 make mvp            # small N matrix
 make matrix         # full matrix, resumable
+make analysis       # regenerate CSV/PNG/parquet artifacts
 ```
 
-Results stream to `results/matrix_runs.jsonl` (one line per run, full `RunSpec` + verdict + evidence). Re-running `make matrix` skips any `run_id` already present.
+Results stream to `results/matrix_runs.jsonl` (one line per run, full `RunSpec` + verdict + evidence). Re-running `make matrix` skips any deterministic `resume_key` already present.
 
 ## Layout
 

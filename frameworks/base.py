@@ -1,5 +1,7 @@
 """Abstract framework — drives one agent through a scenario."""
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 

@@ -1,15 +1,16 @@
 """Abstract scenario — defines the adversarial setup, agent prompt, and
 escape-detection parameters for one (framework × isolation) cell."""
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, Iterator, Any
+from typing import Any
 
 from isolation.base import SandboxHandle
-from tools.standard import ToolSpec, STANDARD_TOOLS
-from canaries.tools import CANARY_TOOLS
-
+from tools.standard import ToolSpec
 
 ScenarioToolHandler = Callable[[SandboxHandle, dict[str, Any]], str]
 

@@ -51,6 +51,7 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["notebooks/*.ipynb", "notebooks/*_executed.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "S"]
@@ -59,3 +60,5 @@ ignore = ["S101", "S603", "S607"]  # asserts, subprocess
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]

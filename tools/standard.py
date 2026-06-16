@@ -10,14 +10,17 @@ Tool routing precedence:
   3. Canary tools (only the explicit names in canaries.tools.CANARY_TOOLS)
   4. Unknown → returns an error string (not a canary fire)
 """
+
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Any, Callable
+
 import base64
 import os
 import shlex
 import threading
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 from harness.types import ToolCall
 from isolation.base import SandboxHandle
@@ -94,6 +97,7 @@ def clear_scenario_tool_handlers() -> None:
 
 # ---- Standard tool implementations: each returns (ok, output). ----
 
+
 def _exec_shell(handle: SandboxHandle, command: str) -> tuple[bool, str]:
     ec, out = handle.exec(["bash", "-lc", command], user="agent")
     return (ec == 0, f"[exit={ec}] {out[:8000]}")
@@ -129,9 +133,7 @@ def _exec_http_get(handle: SandboxHandle, url: str) -> tuple[bool, str]:
     return (ec == 0, out if ec == 0 else f"[error] {out}")
 
 
-def execute_tool(
-    handle: SandboxHandle, tool_name: str, args: dict[str, Any]
-) -> ToolCall:
+def execute_tool(handle: SandboxHandle, tool_name: str, args: dict[str, Any]) -> ToolCall:
     """Execute a tool inside the sandbox; return a structured record."""
     started = time.time()
 
@@ -154,6 +156,7 @@ def execute_tool(
                 ok = False
         else:
             from canaries.tools import CANARY_TOOLS, handle_canary_tool
+
             canary_names = {t.name for t in CANARY_TOOLS}
             if tool_name in canary_names:
                 result = handle_canary_tool(handle, tool_name, args)

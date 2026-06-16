@@ -1,13 +1,15 @@
 """Core types shared across the harness."""
+
 from __future__ import annotations
-from dataclasses import dataclass, field, asdict
-from enum import Enum
-from typing import Any, Optional
+
 import json
 import uuid
+from dataclasses import asdict, dataclass, field
+from enum import StrEnum
+from typing import Any
 
 
-class EscapeCategory(str, Enum):
+class EscapeCategory(StrEnum):
     NONE = "none"
     CANARY_FIRE = "canary_fire"
     TRIPWIRE_FS = "tripwire_fs"
@@ -31,10 +33,10 @@ class ToolCall:
 
 @dataclass
 class RunSpec:
-    framework_id: str       # "anthropic_native" | "langchain_react"
-    isolation_id: str       # "docker" | "gvisor" | "gvisor_egress"
-    scenario_id: str        # "s00_benign" | "s01_injection_web" | ...
-    model: str              # exact snapshot string, e.g. "claude-opus-4-7"
+    framework_id: str  # "anthropic_native" | "langchain_react"
+    isolation_id: str  # "docker" | "gvisor" | "gvisor_egress"
+    scenario_id: str  # "s00_benign" | "s01_injection_web" | ...
+    model: str  # exact snapshot string, e.g. "claude-opus-4-7"
     seed: int
     max_steps: int = 30
     temperature: float = 1.0
@@ -84,31 +86,33 @@ class RunResult:
     final_message: str
     started_at: str
     ended_at: str
-    error: Optional[str] = None
+    error: str | None = None
     image_digest: str = ""
     first_trigger_step: dict[str, int] = field(default_factory=dict)
 
     def to_jsonl(self) -> str:
-        return json.dumps({
-            **asdict(self.spec),
-            "run_id": self.spec.run_id,
-            "resume_key": self.spec.resume_key(),
-            "escaped": self.escaped,
-            "escape_categories": [c.value for c in self.escape_categories],
-            "escape_evidence": self.escape_evidence,
-            "steps_taken": self.steps_taken,
-            "input_tokens": self.input_tokens,
-            "output_tokens": self.output_tokens,
-            "cost_usd": self.cost_usd,
-            "wall_time_s": self.wall_time_s,
-            "final_message": self.final_message,
-            "started_at": self.started_at,
-            "ended_at": self.ended_at,
-            "error": self.error,
-            "image_digest": self.image_digest,
-            "first_trigger_step": self.first_trigger_step,
-            "transcript_summary": [
-                {"tool": tc.tool_name, "ok": tc.success, "step": tc.step_index}
-                for tc in self.transcript
-            ],
-        })
+        return json.dumps(
+            {
+                **asdict(self.spec),
+                "run_id": self.spec.run_id,
+                "resume_key": self.spec.resume_key(),
+                "escaped": self.escaped,
+                "escape_categories": [c.value for c in self.escape_categories],
+                "escape_evidence": self.escape_evidence,
+                "steps_taken": self.steps_taken,
+                "input_tokens": self.input_tokens,
+                "output_tokens": self.output_tokens,
+                "cost_usd": self.cost_usd,
+                "wall_time_s": self.wall_time_s,
+                "final_message": self.final_message,
+                "started_at": self.started_at,
+                "ended_at": self.ended_at,
+                "error": self.error,
+                "image_digest": self.image_digest,
+                "first_trigger_step": self.first_trigger_step,
+                "transcript_summary": [
+                    {"tool": tc.tool_name, "ok": tc.success, "step": tc.step_index}
+                    for tc in self.transcript
+                ],
+            }
+        )

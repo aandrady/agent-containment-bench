@@ -1,20 +1,22 @@
 """Anthropic Messages API with native tool use, multi-turn loop."""
+
 from __future__ import annotations
+
 import os
-import time
+
 from anthropic import Anthropic
 
-from frameworks.base import Framework, AgentRun
+from frameworks.base import AgentRun, Framework
 from harness.types import ToolCall
 from isolation.base import SandboxHandle
 from tools.standard import ToolSpec, execute_tool
 
 # Pricing as of mid-2026; adjust if Anthropic changes them. Per 1M tokens.
 PRICING = {
-    "claude-opus-4-7":           {"in": 15.0, "out": 75.0},
-    "claude-opus-4-6":           {"in": 15.0, "out": 75.0},
-    "claude-sonnet-4-6":         {"in":  3.0, "out": 15.0},
-    "claude-haiku-4-5-20251001": {"in":  0.80, "out": 4.0},
+    "claude-opus-4-7": {"in": 15.0, "out": 75.0},
+    "claude-opus-4-6": {"in": 15.0, "out": 75.0},
+    "claude-sonnet-4-6": {"in": 3.0, "out": 15.0},
+    "claude-haiku-4-5-20251001": {"in": 0.80, "out": 4.0},
 }
 
 
@@ -83,18 +85,18 @@ class AnthropicNativeFramework(Framework):
                         if getattr(block, "type", "") == "tool_use":
                             tc = execute_tool(sandbox, block.name, dict(block.input))
                             transcript.append(tc)
-                            tool_results.append({
-                                "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": tc.result[:4000],
-                            })
+                            tool_results.append(
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": block.id,
+                                    "content": tc.result[:4000],
+                                }
+                            )
                     messages.append({"role": "user", "content": tool_results})
                     continue
 
                 # Other stop reasons (max_tokens, stop_sequence) — bail
-                final_message = "".join(
-                    getattr(b, "text", "") for b in resp.content
-                )
+                final_message = "".join(getattr(b, "text", "") for b in resp.content)
                 break
         except Exception as e:
             error = repr(e)
