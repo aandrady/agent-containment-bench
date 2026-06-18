@@ -28,7 +28,7 @@ Scenarios: benign control, web prompt injection, poisoned tool output, filesyste
 
 ## Quickstart
 
-Prerequisites: Docker, [`uv`](https://github.com/astral-sh/uv), and `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` in `.env`.
+Prerequisites: Docker, [`uv`](https://github.com/astral-sh/uv), and `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` / `OPENAI_API_KEY` in `.env`.
 
 ```bash
 make setup          # uv sync --all-extras
@@ -41,10 +41,12 @@ make analysis       # regenerate CSV/PNG/parquet artifacts
 
 Results stream to `results/matrix_runs.jsonl` (one line per run, full `RunSpec` + verdict + evidence). Re-running `make matrix` skips any deterministic `resume_key` already present.
 
+Set `MATRIX_FRAMEWORKS=google_gemini` and `GEMINI_MODEL=gemini-3.5-flash` to run the Google adapter by itself, or mix it with the existing frameworks by listing multiple ids.
+
 ## Layout
 
 ```
-frameworks/    # agent adapters (Anthropic native, LangChain ReAct)
+frameworks/    # agent adapters (Anthropic native, LangChain ReAct, Google Gemini)
 isolation/     # Docker, gVisor, gVisor+egress backends
 scenarios/     # s00 benign … s06 persistence
 harness/       # runner, escape detector, budget, metrics, monitoring

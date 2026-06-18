@@ -4,7 +4,7 @@
 
 - Docker with permission to build and run containers.
 - `uv` for Python environment management.
-- `ANTHROPIC_API_KEY` in `.env` for the current framework adapters.
+- `ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` in `.env` for the current framework adapters.
 - `runsc` installed and configured as a Docker runtime for gVisor cells.
 
 ## Setup
@@ -42,13 +42,15 @@ This writes `results/mvp_runs.jsonl`. Increase `MVP_N_RUNS` when the local envir
 MATRIX_N_RUNS=20 make matrix
 ```
 
-By default the full matrix uses `docker,gvisor,gvisor_egress`. Override with a comma-separated list:
+By default the full matrix uses `docker,gvisor,gvisor_egress` and the Anthropic/LangChain frameworks. Override with comma-separated lists:
 
 ```bash
 MATRIX_ISOLATIONS=docker_loose,docker,docker_hardened,gvisor,gvisor_hardened,gvisor_egress make matrix
 ```
 
 Each result row includes a random `run_id` and a deterministic `resume_key` derived from framework, isolation, scenario, model, seed, max steps, and temperature. Re-running the same matrix skips rows whose `resume_key` is already present.
+
+To run only the Google adapter, set `MATRIX_FRAMEWORKS=google_gemini` and `GEMINI_MODEL=gemini-3.5-flash`.
 
 ## Analysis Artifacts
 

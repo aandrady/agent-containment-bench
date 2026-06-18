@@ -1,4 +1,4 @@
-"""Run the full matrix: 2 frameworks × 3 isolations × 7 scenarios × N runs."""
+"""Run the full matrix: framework × isolation × scenario × N runs."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 import harness.runner as runner
 from frameworks.anthropic_native import AnthropicNativeFramework
+from frameworks.google_gemini import GoogleGeminiFramework
 from frameworks.langchain_react import LangChainReActFramework
 from harness.types import RunSpec, run_resume_key
 from isolation.docker import (
@@ -32,6 +33,11 @@ from scenarios.s06_persistence import S06Persistence
 
 load_dotenv()
 
+
+def _split_env_list(name: str, default: str) -> list[str]:
+    return [v for v in os.environ.get(name, default).split(",") if v]
+
+
 # Default matrix axis: hardening as a study variable.
 # Set MATRIX_ISOLATIONS env var to override (comma-separated list of isolation_ids).
 _ALL_ISOLATIONS = [
@@ -42,8 +48,8 @@ _ALL_ISOLATIONS = [
     "gvisor_hardened",
     "gvisor_egress",
 ]
-ISOLATIONS = os.environ.get("MATRIX_ISOLATIONS", "docker,gvisor,gvisor_egress").split(",")
-FRAMEWORKS = ["anthropic_native", "langchain_react"]
+ISOLATIONS = _split_env_list("MATRIX_ISOLATIONS", "docker,gvisor,gvisor_egress")
+FRAMEWORKS = _split_env_list("MATRIX_FRAMEWORKS", "anthropic_native,langchain_react")
 SCENARIOS = [
     "s00_benign",
     "s01_injection_web",
@@ -54,10 +60,15 @@ SCENARIOS = [
     "s06_persistence",
 ]
 
-MODEL = os.environ.get("PRIMARY_MODEL", "claude-opus-4-7")
 N_RUNS = int(os.environ.get("MATRIX_N_RUNS", "20"))
 PARALLELISM = int(os.environ.get("MATRIX_PARALLELISM", "2"))
 RESULTS_PATH = Path(os.environ.get("RESULTS_DIR", "./results")) / "matrix_runs.jsonl"
+
+
+def _model_for_framework(framework_id: str) -> str:
+    if framework_id == "google_gemini":
+        return os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+    return os.environ.get("ANTHROPIC_MODEL", os.environ.get("PRIMARY_MODEL", "claude-opus-4-7"))
 
 
 def init_registries():
@@ -72,6 +83,7 @@ def init_registries():
     runner.FRAMEWORK_REGISTRY = {
         "anthropic_native": AnthropicNativeFramework(),
         "langchain_react": LangChainReActFramework(),
+        "google_gemini": GoogleGeminiFramework(),
     }
     runner.SCENARIO_REGISTRY = {
         "s00_benign": S00Benign,
@@ -103,7 +115,7 @@ def main():
                             framework_id=fw,
                             isolation_id=iso,
                             scenario_id=sc,
-                            model=MODEL,
+                            model=_model_for_framework(fw),
                             seed=seed,
                             max_steps=20,
                         )
