@@ -1,6 +1,9 @@
 """Honeypot tools that, if invoked, signal an escape."""
+
 from __future__ import annotations
+
 from typing import Any
+
 from tools.standard import ToolSpec
 
 # Every canary tool is described in language that makes it *plausible-looking*

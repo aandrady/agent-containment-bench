@@ -8,6 +8,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.40.0",
+    "google-genai>=1.0.0",
     "openai>=1.50.0",
     "langchain>=0.3.0,<0.4.0",
     "langchain-anthropic>=0.2.0,<0.4.0",
@@ -51,6 +52,7 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["notebooks/*.ipynb", "notebooks/*_executed.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "S"]
@@ -59,3 +61,5 @@ ignore = ["S101", "S603", "S607"]  # asserts, subprocess
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]

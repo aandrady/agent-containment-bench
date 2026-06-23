@@ -1,4 +1,4 @@
-.PHONY: setup smoke mvp matrix lint format test clean docker-build
+.PHONY: setup smoke mvp matrix analysis lint format test clean docker-build
 
 setup:
 	uv sync --all-extras
@@ -14,6 +14,9 @@ mvp:
 
 matrix:
 	PYTHONPATH=. uv run python scripts/run_matrix.py
+
+analysis:
+	PYTHONPATH=. uv run python scripts/analyze_results.py
 
 lint:
 	uv run ruff check .

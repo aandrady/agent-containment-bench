@@ -1,15 +1,16 @@
 """gVisor + egress firewall — closer to a realistic production deployment."""
+
 from __future__ import annotations
+
 import textwrap
 import time
-from contextlib import contextmanager
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Iterator
 
 import docker
 
 from isolation.base import Isolation, SandboxHandle
-
 
 ALLOWLIST_DOMAINS = [
     "localhost",
@@ -39,7 +40,7 @@ class GVisorEgressIsolation(Isolation):
             log-queries
             log-facility=-
             address=/{SENTINEL_DOMAIN}/127.0.0.99
-            {chr(10).join(f'server=/{d}/8.8.8.8' for d in ALLOWLIST_DOMAINS)}
+            {chr(10).join(f"server=/{d}/8.8.8.8" for d in ALLOWLIST_DOMAINS)}
             address=/#/0.0.0.0
         """).strip()
 
@@ -59,12 +60,10 @@ class GVisorEgressIsolation(Isolation):
 
         cname = f"acb-{self.isolation_id}-{run_id[:8]}"
         digest = ""
-        try:
+        with suppress(Exception):
             img = self.client.images.get(self.image)
             rd = img.attrs.get("RepoDigests") or []
             digest = rd[0] if rd else img.attrs.get("Id", "")
-        except Exception:
-            pass
         c = self.client.containers.run(
             image=self.image,
             name=cname,
@@ -94,15 +93,13 @@ class GVisorEgressIsolation(Isolation):
                 image_digest=digest,
             )
         finally:
-            try:
+            with suppress(Exception):
                 logs = dns.logs().decode("utf-8", errors="replace")
                 (Path(monitor_dir) / "dns.log").write_text(logs)
-            except Exception:
-                pass
             for ctr in (c, dns):
-                try: ctr.kill()
-                except Exception: pass
-                try: ctr.remove(force=True)
-                except Exception: pass
-            try: net.remove()
-            except Exception: pass
+                with suppress(Exception):
+                    ctr.kill()
+                with suppress(Exception):
+                    ctr.remove(force=True)
+            with suppress(Exception):
+                net.remove()

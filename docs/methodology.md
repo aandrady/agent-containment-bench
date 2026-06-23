@@ -7,7 +7,7 @@ The benchmark holds three things constant and varies three things:
 | Held constant | Varied |
 |---|---|
 | Tool surface (`shell`, `file_read`, `file_write`, `http_get`) | Framework (Anthropic native, LangChain ReAct) |
-| Sandbox base image (`acb-sandbox:latest`, Ubuntu 24.04) | Isolation (Docker, gVisor, gVisor+egress) |
+| Sandbox base image (`acb-sandbox:latest`, Ubuntu 24.04) | Isolation (`docker`, `gvisor`, `gvisor_egress`; optional loose/hardened variants) |
 | Model snapshot (default `claude-opus-4-7`) | Scenario (`s00`–`s06`, OWASP-mapped) |
 
 Each cell of the matrix runs N=20 trials with seeds 0–19. Model temperature is fixed at 1.0; we want sampling variance, not determinism.
@@ -51,4 +51,9 @@ Cost is computed from API-reported token usage × `frameworks/anthropic_native.P
 
 ## Reproducibility
 
-Every run writes one JSONL line to `results/matrix_runs.jsonl` with the full `RunSpec`, verdict, categories, evidence, token counts, cost, wall time, and transcript summary. The runner is resumable — re-running `make matrix` skips any `run_id` already present.
+Every run writes one JSONL line to `results/matrix_runs.jsonl` with the full `RunSpec`, verdict, categories, evidence, token counts, cost, wall time, and transcript summary. Each row has a unique `run_id` plus a deterministic `resume_key`; re-running `make matrix` skips any planned cell whose `resume_key` is already present.
+
+
+## Analysis Workflow
+
+Run `make analysis` to derive CSV, parquet, and plot artifacts from `results/matrix_runs.jsonl`. Aggregates include `model` so mixed exploratory result files do not combine model snapshots. Checked-in results are exploratory unless produced from a single declared model snapshot, matrix axis, and run count.

@@ -1,24 +1,26 @@
 """LangChain ReAct agent driving the same tool surface."""
+
 from __future__ import annotations
+
 import os
 
-from langchain_anthropic import ChatAnthropic
 from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import StructuredTool
 
-from frameworks.base import Framework, AgentRun
 from frameworks.anthropic_native import _estimate_cost
+from frameworks.base import AgentRun, Framework
 from harness.types import ToolCall
-from isolation.base import SandboxHandle
 from tools.standard import ToolSpec, execute_tool
 
 
 class LangChainReActFramework(Framework):
     framework_id = "langchain_react"
 
-    def run_agent(self, sandbox, system_prompt, user_message, tools, model,
-                  max_steps, temperature) -> AgentRun:
+    def run_agent(
+        self, sandbox, system_prompt, user_message, tools, model, max_steps, temperature
+    ) -> AgentRun:
         transcript: list[ToolCall] = []
 
         def make_lc_tool(spec: ToolSpec):
@@ -28,31 +30,43 @@ class LangChainReActFramework(Framework):
                 return tc.result
 
             from pydantic import create_model
+
             field_defs = {}
             for prop, schema in spec.input_schema.get("properties", {}).items():
                 py_type = {"string": str, "boolean": bool, "integer": int}.get(
-                    schema.get("type", "string"), str)
+                    schema.get("type", "string"),
+                    str,
+                )
                 field_defs[prop] = (py_type, ...)
-            ArgsModel = create_model(f"{spec.name}_args", **field_defs)
+            args_model = create_model(f"{spec.name}_args", **field_defs)
             return StructuredTool.from_function(
-                func=_fn, name=spec.name, description=spec.description,
-                args_schema=ArgsModel,
+                func=_fn,
+                name=spec.name,
+                description=spec.description,
+                args_schema=args_model,
             )
 
         lc_tools = [make_lc_tool(t) for t in tools]
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", "{input}"),
-            ("placeholder", "{agent_scratchpad}"),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+                ("placeholder", "{agent_scratchpad}"),
+            ]
+        )
         llm = ChatAnthropic(
-            model=model, temperature=temperature, max_tokens=2048,
+            model=model,
+            temperature=temperature,
+            max_tokens=2048,
             api_key=os.environ["ANTHROPIC_API_KEY"],
         )
         agent = create_tool_calling_agent(llm, lc_tools, prompt)
         executor = AgentExecutor(
-            agent=agent, tools=lc_tools, max_iterations=max_steps,
-            verbose=False, return_intermediate_steps=True,
+            agent=agent,
+            tools=lc_tools,
+            max_iterations=max_steps,
+            verbose=False,
+            return_intermediate_steps=True,
             handle_parsing_errors=True,
         )
 

@@ -8,9 +8,12 @@ so the matrix can compare:
   - gvisor:          baseline policy under runsc
   - gvisor_hardened: hardened policy under runsc
 """
+
 from __future__ import annotations
-from contextlib import contextmanager
-from typing import Iterator
+
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
+
 import docker
 
 from isolation.base import Isolation, SandboxHandle
@@ -47,8 +50,11 @@ def _hardening_kwargs(level: str) -> dict:
             security_opt=["no-new-privileges"],
             cap_drop=["ALL"],
             read_only=True,
-            tmpfs={"/tmp": "rw,size=64m", "/work": "rw,size=64m,uid=1000,gid=1000",
-                   "/home/agent": "rw,size=32m,uid=1000,gid=1000"},
+            tmpfs={
+                "/tmp": "rw,size=64m",  # noqa: S108 - container tmpfs mount.
+                "/work": "rw,size=64m,uid=1000,gid=1000",
+                "/home/agent": "rw,size=32m,uid=1000,gid=1000",
+            },
         )
     # default "baseline"
     return dict(
@@ -65,8 +71,12 @@ class DockerIsolation(Isolation):
     isolation_id = "docker"
     hardening: str = "baseline"
 
-    def __init__(self, image: str = "acb-sandbox:latest", runtime: str | None = None,
-                 hardening: str | None = None):
+    def __init__(
+        self,
+        image: str = "acb-sandbox:latest",
+        runtime: str | None = None,
+        hardening: str | None = None,
+    ):
         self.image = image
         self.runtime = runtime
         if hardening:
@@ -105,29 +115,25 @@ class DockerIsolation(Isolation):
                 image_digest=digest,
             )
         finally:
-            try:
+            with suppress(Exception):
                 c.kill()
-            except Exception:
-                pass
-            try:
+            with suppress(Exception):
                 c.remove(force=True)
-            except Exception:
-                pass
-            try:
+            with suppress(Exception):
                 net.remove()
-            except Exception:
-                pass
 
 
 class DockerLooseIsolation(DockerIsolation):
     """Naive deployment baseline: no cap_drop, no no-new-privileges, no read-only.
     Useful as the 'how bad does it get?' anchor in the hardening axis."""
+
     isolation_id = "docker_loose"
     hardening = "loose"
 
 
 class DockerHardenedIsolation(DockerIsolation):
     """Tight defaults: read-only rootfs, no cap_add, tmpfs for writable areas."""
+
     isolation_id = "docker_hardened"
     hardening = "hardened"
 
